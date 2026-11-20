@@ -30,6 +30,21 @@ export function fitWithin(
   };
 }
 
+/**
+ * The pixel width at which a shape of any unit (inches, millimetres,
+ * points) comes out `maxSide` pixels on its longest side. For a renderer
+ * that takes a width in pixels, such as `render_png(widthPx)`, when the
+ * document is measured in something else.
+ */
+export function renderWidth(
+  width: number,
+  height: number,
+  maxSide: number = RECOMMENDED_MAX_SIDE
+): number {
+  if (!(width > 0) || !(height > 0)) return 0;
+  return Math.max(1, Math.round((maxSide * width) / Math.max(width, height)));
+}
+
 /** What `toHostImage` takes. Bytes are an encoded picture (a PNG by default). */
 export type ImageSource =
   | HTMLCanvasElement

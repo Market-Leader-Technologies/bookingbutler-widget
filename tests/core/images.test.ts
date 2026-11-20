@@ -3,6 +3,7 @@ import {
   ImageTooLargeError,
   MAX_IMAGE_BYTES,
   fitWithin,
+  renderWidth,
   toHostImage,
 } from "../../src";
 
@@ -19,6 +20,14 @@ describe("fitWithin", () => {
   it("takes another limit, and nothing for no size", () => {
     expect(fitWithin(2000, 1000, 500)).toEqual({ width: 500, height: 250 });
     expect(fitWithin(0, 10)).toEqual({ width: 0, height: 0 });
+  });
+});
+
+describe("renderWidth", () => {
+  it("turns an artboard in inches into a width in pixels", () => {
+    expect(renderWidth(24, 18)).toBe(1568); // landscape: the width is the long side
+    expect(renderWidth(11, 17)).toBe(1015); // portrait: the height is 1568
+    expect(renderWidth(0, 5)).toBe(0);
   });
 });
 

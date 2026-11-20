@@ -16,6 +16,7 @@ export {
 export {
   ImageTooLargeError,
   fitWithin,
+  renderWidth,
   toHostImage,
   type ImageSource,
   type ToHostImageOptions,

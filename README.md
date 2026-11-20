@@ -176,16 +176,19 @@ registerTool({
 ```
 
 **If you render the picture yourself**, as an engine that draws to PNG
-bytes does, render it at the right size with `fitWithin` and pass the
-bytes. This beats capturing the screen: there is no editor UI in the
-picture, no WebGL read-back setting to get right, and the picture is the
-same every time.
+bytes does, render it at the right size and pass the bytes. This beats
+capturing the screen: there is no editor UI in the picture, no WebGL
+read-back setting to get right, and the picture is the same every time.
+
+`renderWidth` gives the width that makes the longest side 1568 px, from a
+size in any unit. `fitWithin` does the same for a size already in pixels,
+and never enlarges.
 
 ```ts
-import { fitWithin, toHostImage } from "@bookingbutler/widget";
+import { renderWidth, toHostImage } from "@bookingbutler/widget";
 
-const { width } = fitWithin(artboard.widthPx, artboard.heightPx); // ≤ 1568 on the long side
-const png = engine.render_page_png(page, width, false); // Uint8Array
+const [w, h] = engine.page_size(page); // inches
+const png = engine.render_page_png(page, renderWidth(w, h), false); // Uint8Array
 attachImage(await toHostImage(png));
 ```
 
