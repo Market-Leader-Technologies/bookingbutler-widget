@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>BookingButler widget: host tools</title>
+  </head>
+  <body>
+    <canvas id="art" width="800" height="600"></canvas>
+    <script type="module">
+      // From a CDN for this example; in an app, `npm install @bookingbutler/widget`.
+      import {
+        loadWidget,
+        registerTool,
+        setContext,
+        toHostImage,
+      } from "https://cdn.jsdelivr.net/npm/@bookingbutler/widget@0.1.0/dist/index.js";
+
+      const canvas = document.getElementById("art");
+      const ctx = canvas.getContext("2d");
+      let color = "#3b82f6";
+      const draw = () => {
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, 800, 600);
+        ctx.fillStyle = color;
+        ctx.fillRect(200, 150, 400, 300);
+      };
+      draw();
+
+      registerTool({
+        name: "set_box_color",
+        description: "Changes the box's colour. Takes a CSS colour.",
+        parameters: {
+          type: "object",
+          properties: { color: { type: "string" } },
+          required: ["color"],
+        },
+        handler: ({ color: next }) => {
+          color = String(next);
+          draw();
+          setContext({ data: { boxColor: color } });
+          return { ok: true, color };
+        },
+      });
+
+      registerTool({
+        name: "look_at_canvas",
+        description: "Shows you the canvas. Use it to check a change.",
+        handler: async (_args, { attachImage, imagesSupported }) => {
+          attachImage(await toHostImage(canvas));
+          return { width: 800, height: 600, imagesSupported };
+        },
+      });
+
+      setContext({ data: { boxColor: color } });
+      loadWidget({
+        botId: "YOUR_BOT_ID",
+        widgetId: "YOUR_WIDGET_ID",
+        organizationId: "YOUR_ORGANIZATION_ID",
+        apiKey: "YOUR_API_KEY",
+        apiKeyId: "YOUR_API_KEY_ID",
+      }).catch(console.error);
+    </script>
+  </body>
+</html>

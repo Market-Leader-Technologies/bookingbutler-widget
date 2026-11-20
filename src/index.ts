@@ -1,0 +1,45 @@
+export {
+  DEFAULT_BASE_URL,
+  WidgetConfigError,
+  WidgetLoadError,
+  destroyWidget,
+  getWidget,
+  hideWidget,
+  loadWidget,
+  onToolCall,
+  registerTool,
+  setContext,
+  setTheme,
+  showWidget,
+  toggleWidget,
+} from "./core/loader";
+export {
+  ImageTooLargeError,
+  fitWithin,
+  toHostImage,
+  type ImageSource,
+  type ToHostImageOptions,
+} from "./core/images";
+export {
+  IMAGES_THE_AGENT_SEES,
+  IMAGE_TYPES,
+  MAX_CONTEXT_BYTES,
+  MAX_HOST_TOOLS,
+  MAX_IMAGES_PER_RESULT,
+  MAX_IMAGE_BYTES,
+  RECOMMENDED_MAX_SIDE,
+  TOOL_NAME_PATTERN,
+} from "./core/limits";
+export type {
+  HostImage,
+  HostImageData,
+  HostImageType,
+  HostTool,
+  HostToolMeta,
+  LoadedWidget,
+  ToolCallEvent,
+  ToolParameters,
+  WidgetConfig,
+  WidgetContext,
+  WidgetTheme,
+} from "./core/types";
