@@ -11,8 +11,10 @@ export interface WidgetConfig {
   apiKey: string;
   apiKeyId: string;
   /**
-   * Where `v1/widget.js` is served. Defaults to production
-   * (`https://widgets.bookingbutler.ai`); set it only for dev or staging.
+   * Where `v1/widget.js` is served, to test against dev, staging or a local
+   * widget server. Defaults to `setDefaultBaseUrl`'s value, else production
+   * (`https://widgets.bookingbutler.ai`). The chat talks to the API its host
+   * was built for, so this one URL picks the whole environment.
    */
   baseUrl?: string;
   /** light (the default), dark, or auto (follows the visitor's system). */

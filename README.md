@@ -40,8 +40,51 @@ secret: it is in every page that shows the chat.
 Two values are optional:
 
 - **`baseUrl`**: where `widget.js` is served. It defaults to production,
-  `https://widgets.bookingbutler.ai`; set it only for dev or staging.
+  `https://widgets.bookingbutler.ai`. See [Environments](#environments).
 - **`theme`**: `light` (the default), `dark` or `auto`.
+
+## Environments
+
+The chat that `widget.js` opens talks to the API its host was built for. So
+one URL, the widget host, picks the whole environment.
+
+| Host                               | What it is                                       |
+| ---------------------------------- | ------------------------------------------------ |
+| `https://widgets.bookingbutler.ai` | production (the default)                         |
+| `http://localhost:3001`            | a local widget dev server (`WIDGET_HOSTS.local`) |
+| your dev or staging widget host    | whatever it is deployed at                       |
+
+Set it once for the whole app, from your environment:
+
+```ts
+import { setDefaultBaseUrl } from "@bookingbutler/widget";
+
+// Vite: VITE_BUTLER_WIDGET_BASE_URL=http://localhost:3001
+setDefaultBaseUrl(import.meta.env.VITE_BUTLER_WIDGET_BASE_URL || undefined);
+// Next.js: process.env.NEXT_PUBLIC_BUTLER_WIDGET_BASE_URL
+```
+
+Or set it for one load, which wins over the default:
+
+```ts
+loadWidget({ ...ids, baseUrl: "http://localhost:3001" });
+<BookingButlerWidget {...ids} baseUrl="http://localhost:3001" />;
+```
+
+`undefined` or an empty string means production.
+
+- **Checked:** a host that is not an `http(s)` URL is refused with
+  `WidgetConfigError` before anything is added to the page. A path is
+  kept (`https://cdn.example/widget`); a trailing slash, query or hash is
+  dropped.
+- **Your ids must match:** use the `botId`, `widgetId` and keys from that
+  environment's own embed snippet. A dev host does not know production's
+  widget.
+- **`resolveBaseUrl(config)`** says which host a config will load from.
+
+The override is code you ship. Nothing on the page (no query string, no
+storage) can change the host, so a visitor cannot point your site at
+someone else's script.
 
 ## Quick start
 
@@ -247,6 +290,8 @@ to the page's own. Keep it to facts, at most 4 KB as JSON: over that,
 | `onToolCall(listener)`                         | Hears each tool call; returns a function to stop.            |
 | `setTheme(theme)`                              | `light`, `dark` or `auto`; redraws at once.                  |
 | `showWidget()` `hideWidget()` `toggleWidget()` | Opens or closes the chat.                                    |
+| `setDefaultBaseUrl(url)`                       | The widget host for every load without its own `baseUrl`.    |
+| `resolveBaseUrl(config?)`                      | The host a config loads from.                                |
 | `destroyWidget()`                              | Removes it. A later `loadWidget` restores tools and context. |
 | `getWidget()`                                  | The loaded widget, or `undefined`.                           |
 | `toHostImage(source, options?)`                | A picture ready for `attachImage`.                           |

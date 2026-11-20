@@ -13,6 +13,13 @@ import type {
 /** Production: where `v1/widget.js` is served. */
 export const DEFAULT_BASE_URL = "https://widgets.bookingbutler.ai";
 
+/** Known widget hosts. Each serves a chat built against its own API. */
+export const WIDGET_HOSTS = {
+  production: DEFAULT_BASE_URL,
+  /** `apps/widget`'s dev server (`pnpm dev`), against its `VITE_API_BASE_URL`. */
+  local: "http://localhost:3001",
+} as const;
+
 /** Marks the script tag this package added. */
 const SCRIPT_ATTRIBUTE = "data-bookingbutler-widget";
 
@@ -32,9 +39,10 @@ declare global {
 /** The config is missing a value the widget needs; `missing` names them. */
 export class WidgetConfigError extends Error {
   readonly missing: string[];
-  constructor(missing: string[]) {
+  constructor(missing: string[], message?: string) {
     super(
-      `BookingButler widget: missing ${missing.join(", ")}. Copy them from the widget's embed snippet.`
+      message ??
+        `BookingButler widget: missing ${missing.join(", ")}. Copy them from the widget's embed snippet.`
     );
     this.name = "WidgetConfigError";
     this.missing = missing;
@@ -65,6 +73,7 @@ const inBrowser = () =>
 const tools = new Map<string, Parameters<LoadedWidget["registerTool"]>[0]>();
 let lastContext: WidgetContext | undefined;
 let loading: Promise<LoadedWidget> | undefined;
+let defaultBaseUrl: string | undefined;
 let destroyed = false;
 let warnedNoImages = false;
 
@@ -83,6 +92,46 @@ function call(method: keyof LoadedWidget, ...args: unknown[]): void {
   } else {
     queue().push([method, ...args]);
   }
+}
+
+/**
+ * The widget host used when a config has no `baseUrl`, for a whole app: set
+ * it once from your environment (dev, staging, a local widget server).
+ * `undefined` goes back to production. Takes effect on the next load.
+ */
+export function setDefaultBaseUrl(baseUrl: string | undefined): void {
+  defaultBaseUrl = baseUrl ? normalizeBaseUrl(baseUrl) : undefined;
+}
+
+/**
+ * The widget host a config loads from: its own `baseUrl`, else the default
+ * set with `setDefaultBaseUrl`, else production. Without a trailing slash.
+ */
+export function resolveBaseUrl(
+  config: Pick<WidgetConfig, "baseUrl"> = {}
+): string {
+  return config.baseUrl
+    ? normalizeBaseUrl(config.baseUrl)
+    : (defaultBaseUrl ?? DEFAULT_BASE_URL);
+}
+
+/** An http(s) URL without a trailing slash; anything else throws. */
+function normalizeBaseUrl(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    throw new WidgetConfigError(
+      ["baseUrl"],
+      `BookingButler widget: baseUrl "${raw}" is not a URL. Use the widget host's origin, such as ${DEFAULT_BASE_URL}.`
+    );
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:")
+    throw new WidgetConfigError(
+      ["baseUrl"],
+      `BookingButler widget: baseUrl must be http or https, not ${url.protocol}`
+    );
+  return url.href.replace(/[?#].*$/, "").replace(/\/+$/, "");
 }
 
 /** The loaded widget, or undefined before `widget.js` has run. */
@@ -108,6 +157,12 @@ export function loadWidget(config: WidgetConfig): Promise<LoadedWidget> {
     (key) => typeof config[key] !== "string" || !String(config[key]).trim()
   );
   if (missing.length) return Promise.reject(new WidgetConfigError(missing));
+  let base: string;
+  try {
+    base = resolveBaseUrl(config);
+  } catch (error) {
+    return Promise.reject(error);
+  }
   if (window.BothQWidget) return Promise.resolve(window.BothQWidget);
   if (loading) return loading;
 
@@ -121,7 +176,6 @@ export function loadWidget(config: WidgetConfig): Promise<LoadedWidget> {
     destroyed = false;
   }
 
-  const base = (config.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
   const script = document.createElement("script");
   script.src = `${base}/v1/widget.js`;
   script.async = true;
@@ -291,6 +345,7 @@ export function resetForTests(): void {
   tools.clear();
   lastContext = undefined;
   loading = undefined;
+  defaultBaseUrl = undefined;
   destroyed = false;
   warnedNoImages = false;
   if (inBrowser()) {

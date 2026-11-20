@@ -4,9 +4,12 @@ import {
   WidgetConfigError,
   destroyWidget,
   loadWidget,
+  WIDGET_HOSTS,
   onToolCall,
   registerTool,
+  resolveBaseUrl,
   setContext,
+  setDefaultBaseUrl,
   showWidget,
 } from "../../src";
 import { config, fakeWidget } from "../helpers";
@@ -41,6 +44,33 @@ describe("loadWidget", () => {
   it("takes a dev base URL, without a trailing slash", () => {
     void loadWidget({ ...config, baseUrl: "http://localhost:3001/" });
     expect(scripts()[0]!.src).toBe("http://localhost:3001/v1/widget.js");
+  });
+
+  it("loads from an app-wide default host, and a config's own wins", () => {
+    setDefaultBaseUrl("https://widgets.dev.example/");
+    expect(resolveBaseUrl()).toBe("https://widgets.dev.example");
+    expect(resolveBaseUrl({ baseUrl: WIDGET_HOSTS.local })).toBe(
+      "http://localhost:3001"
+    );
+    void loadWidget(config);
+    expect(scripts()[0]!.src).toBe("https://widgets.dev.example/v1/widget.js");
+    expect(scripts()[0]!.dataset.baseUrl).toBe("https://widgets.dev.example");
+    setDefaultBaseUrl(undefined);
+    expect(resolveBaseUrl()).toBe(DEFAULT_BASE_URL);
+  });
+
+  it("keeps a path, and refuses a host that is not http(s)", async () => {
+    expect(resolveBaseUrl({ baseUrl: "https://cdn.example/widget/?x=1" })).toBe(
+      "https://cdn.example/widget"
+    );
+    await expect(
+      loadWidget({ ...config, baseUrl: "javascript:alert(1)" })
+    ).rejects.toBeInstanceOf(WidgetConfigError);
+    await expect(
+      loadWidget({ ...config, baseUrl: "not a url" })
+    ).rejects.toThrow(/not a URL/);
+    expect(() => setDefaultBaseUrl("ftp://x")).toThrow(/http or https/);
+    expect(scripts()).toHaveLength(0);
   });
 
   it("names what the config is missing", async () => {

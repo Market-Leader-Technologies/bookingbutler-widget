@@ -1,5 +1,6 @@
 export {
   DEFAULT_BASE_URL,
+  WIDGET_HOSTS,
   WidgetConfigError,
   WidgetLoadError,
   destroyWidget,
@@ -8,6 +9,8 @@ export {
   loadWidget,
   onToolCall,
   registerTool,
+  resolveBaseUrl,
+  setDefaultBaseUrl,
   setContext,
   setTheme,
   showWidget,
